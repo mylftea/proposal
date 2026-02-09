@@ -1,0 +1,237 @@
+<!DOCTYPE html><html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Be My Valentine 💕</title><script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script><style>
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #ffb6c1, #ff69b4);
+  font-family: 'Segoe UI', sans-serif;
+  text-align: center;
+  transition: background 2s ease;
+}
+
+.night { background: radial-gradient(circle at bottom, #0b0c2a, #000010 70%); }
+
+h1 { font-size: 2.5rem; color: white; min-height: 60px; }
+
+.neon {
+  font-size: 3rem;
+  color: #ff4da6;
+  text-shadow: 0 0 5px #ff4da6, 0 0 10px #ff4da6, 0 0 20px #ff1a75, 0 0 40px #ff1a75;
+  animation: glow 1.5s ease-in-out infinite alternate;
+}
+
+@keyframes glow { from { text-shadow: 0 0 10px #ff4da6; } to { text-shadow: 0 0 30px #ff1a75; } }
+
+.buttons { margin-top: 30px; position: relative; height: 200px; display: none; }
+
+button {
+  padding: 15px 30px;
+  font-size: 1.2rem;
+  border: none;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: absolute;
+}
+
+#yesBtn { background-color: #ff2e63; color: white; left: 35%; z-index: 2; }
+#noBtn { background-color: #555; color: white; left: 60%; z-index: 2; }
+
+#successMessage { font-size: 3rem; display: none; margin-top: 20px; }
+
+#countdown { font-size: 4rem; color: white; }
+
+.star {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: white;
+  animation: twinkle 2s infinite alternate;
+}
+
+@keyframes twinkle { from { opacity: 0.2; } to { opacity: 1; } }
+
+canvas { position: fixed; top: 0; left: 0; pointer-events: none; }
+</style></head>
+<body><canvas id="fireworks"></canvas>
+
+<div>
+  <div id="countdown"></div>
+  <h1 id="question"></h1>
+  <div class="buttons">
+    <button id="yesBtn">Yes 💖</button>
+    <button id="noBtn">No 😢</button>
+  </div>
+  <div id="successMessage"></div>
+</div><audio id="bgMusic" loop>
+  <source src="https://www.bensound.com/bensound-music/bensound-romantic.mp3" type="audio/mpeg">
+</audio><script>
+let name = new URLSearchParams(window.location.search).get('name');
+if (!name) name = prompt("Enter her name:");
+
+const countdownEl = document.getElementById("countdown");
+const questionEl = document.getElementById("question");
+const buttons = document.querySelector(".buttons");
+const noBtn = document.getElementById("noBtn");
+const yesBtn = document.getElementById("yesBtn");
+const successMessage = document.getElementById("successMessage");
+const music = document.getElementById("bgMusic");
+
+let noScale = 1;
+let yesScale = 1;
+
+/* ================= COUNTDOWN ================= */
+let count = 3;
+countdownEl.innerText = count;
+
+const countdownInterval = setInterval(() => {
+  count--;
+  if (count > 0) {
+    countdownEl.innerText = count;
+  } else {
+    clearInterval(countdownInterval);
+    countdownEl.innerText = "💖";
+    setTimeout(() => {
+      countdownEl.style.display = "none";
+      typeQuestion();
+    }, 800);
+  }
+}, 1000);
+
+/* ================= TYPING ANIMATION ================= */
+function typeQuestion() {
+  const text = `Will you be my Valentine, ${name}? ❤️`;
+  let i = 0;
+  const typing = setInterval(() => {
+    questionEl.innerText += text.charAt(i);
+    i++;
+    if (i >= text.length) {
+      clearInterval(typing);
+      buttons.style.display = "block";
+    }
+  }, 70);
+}
+
+/* ================= BUTTON LOGIC ================= */
+function moveNoButton() {
+  const padding = 80;
+  const x = Math.random() * (window.innerWidth - padding);
+  const y = Math.random() * (window.innerHeight - padding);
+  noBtn.style.left = x + "px";
+  noBtn.style.top = y + "px";
+
+  noScale -= 0.1;
+  if (noScale < 0.3) noScale = 0.3;
+  noBtn.style.transform = `scale(${noScale})`;
+
+  yesScale += 0.1;
+  yesBtn.style.transform = `scale(${yesScale})`;
+}
+
+noBtn.addEventListener("mouseover", moveNoButton);
+noBtn.addEventListener("touchstart", moveNoButton);
+noBtn.addEventListener("click", moveNoButton);
+
+/* ================= MUSIC FADE IN ================= */
+document.body.addEventListener("click", () => {
+  music.volume = 0;
+  music.play();
+  let vol = 0;
+  const fade = setInterval(() => {
+    if (vol < 1) {
+      vol += 0.02;
+      music.volume = vol;
+    } else clearInterval(fade);
+  }, 100);
+}, { once: true });
+
+/* ================= YES CLICK ================= */
+yesBtn.addEventListener("click", async () => {
+  document.body.classList.add("night");
+  createStars();
+  buttons.style.display = "none";
+  successMessage.innerHTML = `<div class='neon'>${name} 💕</div><div class='neon'>She Said YES! 💖</div>`;
+  successMessage.style.display = "block";
+  confetti({ particleCount: 200, spread: 120, origin: { y: 0.6 } });
+  startFireworks();
+  sendNotification();
+});
+
+/* ================= STARS ================= */
+function createStars() {
+  for (let i = 0; i < 150; i++) {
+    const star = document.createElement("div");
+    star.classList.add("star");
+    star.style.left = Math.random() * 100 + "vw";
+    star.style.top = Math.random() * 100 + "vh";
+    star.style.animationDuration = Math.random() * 2 + 1 + "s";
+    document.body.appendChild(star);
+  }
+}
+
+/* ================= FIREWORKS ================= */
+const canvas = document.getElementById("fireworks");
+const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+
+function random(min, max) { return Math.random() * (max - min) + min; }
+
+function startFireworks() {
+  for (let i = 0; i < 6; i++) {
+    setTimeout(() => createExplosion(), i * 500);
+  }
+}
+
+function createExplosion() {
+  const x = random(100, canvas.width - 100);
+  const y = random(100, canvas.height - 200);
+  const particles = [];
+  for (let i = 0; i < 120; i++) {
+    particles.push({ x, y, angle: Math.random() * 2 * Math.PI, speed: random(2,6), radius: 2, alpha: 1 });
+  }
+  function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    particles.forEach(p => {
+      p.x += Math.cos(p.angle) * p.speed;
+      p.y += Math.sin(p.angle) * p.speed;
+      p.alpha -= 0.01;
+      ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
+      ctx.beginPath();
+      ctx.arc(p.x,p.y,p.radius,0,2*Math.PI);
+      ctx.fill();
+    });
+    if (particles[0].alpha > 0) requestAnimationFrame(animate);
+  }
+  animate();
+}
+
+window.addEventListener("resize", () => {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
+
+/* ================= NOTIFICATION ================= */
+async function sendNotification() {
+  if ("Notification" in window) {
+    if (Notification.permission === "granted") {
+      new Notification("She said YES! 💕");
+    } else if (Notification.permission !== "denied") {
+      const permission = await Notification.requestPermission();
+      if (permission === "granted") {
+        new Notification("She said YES! 💕");
+      }
+    }
+  }
+}
+
+</script></body>
+</html>
